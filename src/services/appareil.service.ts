@@ -1,5 +1,8 @@
 import { Subject } from "rxjs/Subject";
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
 
+@Injectable()
 export class AppareilService {
   appareilsSubject = new Subject<any[]>();
 
@@ -20,6 +23,8 @@ export class AppareilService {
       statut: "éteint"
     }
   ];
+
+  constructor(private httpClient: HttpClient) {}
 
   emitAppareilSubject() {
     this.appareilsSubject.next(this.appareils.slice());
@@ -54,5 +59,48 @@ export class AppareilService {
       return s.id === id;
     });
     return appareil;
+  }
+
+  addAppareil(name: string, status: string) {
+    const appareilObject = {
+      id: 0,
+      name: "",
+      statut: ""
+    };
+    appareilObject.name = name;
+    appareilObject.statut = status;
+    appareilObject.id = this.appareils[this.appareils.length - 1].id + 1;
+    this.appareils.push(appareilObject);
+    this.emitAppareilSubject();
+  }
+
+  saveAppareilsToServer() {
+    this.httpClient
+      .put(
+        "https://appareil-9c973.firebaseio.com/appareils.json",
+        this.appareils
+      )
+      .subscribe(
+        () => {
+          console.log("Enregistrement terminé !");
+        },
+        error => {
+          console.log("Erreur ! : " + error);
+        }
+      );
+  }
+
+  getAppareilsFromServer() {
+    this.httpClient
+      .get<any[]>("https://appareil-9c973.firebaseio.com/appareils.json")
+      .subscribe(
+        response => {
+          this.appareils = response;
+          this.emitAppareilSubject();
+        },
+        error => {
+          console.log("Erreur ! : " + error);
+        }
+      );
   }
 }
